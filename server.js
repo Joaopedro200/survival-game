@@ -196,10 +196,11 @@ io.on('connection',function(socket){
 
   socket.on('update_state',function(data){var room=getPlayerRoom(socket.id);if(!room)return;var p=room.players.get(socket.id);if(!p)return;if(data.health!==undefined)p.health=data.health;if(data.hunger!==undefined)p.hunger=data.hunger;if(data.isDead!==undefined)p.isDead=data.isDead;});
 
+  // ✅ CORREÇÃO: forward vector com Math.sin (sem negativo)
   socket.on('attack',function(data){
     var room=getPlayerRoom(socket.id);if(!room)return;var p=room.players.get(socket.id);if(!p||p.isDead)return;
     var now=Date.now();if(now-p.lastAtk<350)return;p.lastAtk=now;
-    var dmg=data.dmg||8,range=3.2,fwd={x:-Math.sin(p.rotY),z:-Math.cos(p.rotY)},bestE=null,bestD=range;
+    var dmg=data.dmg||8,range=3.2,fwd={x:Math.sin(p.rotY),z:-Math.cos(p.rotY)},bestE=null,bestD=range;
     room.enemies.forEach(function(e){if(e.hp<=0)return;var dx=e.x-p.x,dz=e.z-p.z,dist=Math.sqrt(dx*dx+dz*dz);if(dist>range)return;var dot=fwd.x*(dx/dist)+fwd.z*(dz/dist),angle=Math.acos(Math.max(-1,Math.min(1,dot)));if(angle<Math.PI/3&&dist<bestD){bestD=dist;bestE=e;}});
     if(bestE){bestE.hp-=dmg;bestE.hitFlash=.3;bestE.state='chase';
       var d=Math.sqrt((bestE.x-p.x)**2+(bestE.z-p.z)**2)||1;
